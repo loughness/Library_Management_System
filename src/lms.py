@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask.json.provider import DefaultJSONProvider
 from flask_restx import Api, reqparse, Resource
 from utils.library_json_utils import LibraryJsonEncoder
 from services.library import Library
@@ -6,13 +7,21 @@ from models.book import Book
 from models.member import Member
 from models.section import Section
 from models.librarian import Librarian
+import json
+
+# Custom JSON provider that uses our encoder
+class LibraryJSONProvider(DefaultJSONProvider):
+    def dumps(self, obj, **kwargs):
+        kwargs.setdefault('cls', LibraryJsonEncoder)
+        return json.dumps(obj, **kwargs)
 
 # Initialize library
 my_library = Library()
 
 # Initialize Flask app
 lms_app = Flask(__name__)
-lms_app.json_encoder = LibraryJsonEncoder
+# Use custom JSON provider for Flask 2.x+
+lms_app.json = LibraryJSONProvider(lms_app)
 lms_api = Api(lms_app)
 
 # Request parsers
