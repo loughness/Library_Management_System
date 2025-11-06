@@ -18,6 +18,18 @@ class Library:
                 return book
         return None
     
+    def available_books(self):
+        available_books = []
+        
+        for book in self.books:
+            if not book.is_borrowed:
+                available_books.append(book)
+        
+        if len(available_books) <= 0:
+            return {"message": "There are no available books..."}
+        else:
+            return available_books
+    
     # Member methods
     def add_member(self, member):
         self.members.append(member)

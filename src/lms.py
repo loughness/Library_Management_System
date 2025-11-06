@@ -89,6 +89,12 @@ class AllBooksAPI(Resource):
         """Get all books in the library"""
         return jsonify(my_library.books)
 
+@lms_api.route('/books/available')
+class AllAvailableBooksAPI(Resource):
+    def get(self):
+        """Get all available (not borrowed) books"""
+        available_books = my_library.available_books() # Gets both a list of books and total number of available books
+        return jsonify(available_books) # Gets just the list of available books
 
 @lms_api.route('/book/<book_id>/borrow')
 class BorrowBookAPI(Resource):
@@ -109,6 +115,7 @@ class ReturnBookAPI(Resource):
         # Calculate overdue fees
         # Update book and member objects
         pass
+
 
 
 # ============================================
