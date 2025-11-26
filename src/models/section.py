@@ -26,6 +26,9 @@ class Section:
             return True
         return False
     
+    def get_all_books(self):
+        return self.books
+    
     def clean(self):
         """Mark section as cleaned"""
         self.last_cleaned = datetime.datetime.now()
@@ -34,3 +37,12 @@ class Section:
         """Check if section is at maximum capacity"""
         return len(self.books) >= self.capacity
 
+    def get_details(self):
+        return self
+    
+    def add_librarian(self, librarian_id):
+        self.librarian_id = librarian_id
+
+    def get_librarian_id(self):
+        return self.librarian_id
+    

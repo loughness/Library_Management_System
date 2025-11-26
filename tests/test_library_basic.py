@@ -124,3 +124,29 @@ def test_redistribute_sections(library):
     assert len(library.librarians) == 2
     assert len(first_librarian.sections) == 4
     assert len(second_librarian.sections) == 4
+
+
+def test_get_all_librarians(library):
+    # check for returning None
+    all_librarians = library.get_all_librarians()
+    assert all_librarians == []
+
+    library.add_librarian(Librarian("l1", "e1"))
+    library.add_librarian(Librarian("l2", "e2"))
+
+    all_librarians = library.get_all_librarians()
+    assert len(all_librarians) == 2
+
+def test_get_all_sections_managed_by_a_librarian(library, sample_librarian, sample_section):
+    library.add_librarian(sample_librarian)
+    librarian_id = sample_librarian.employee_id
+    all_sections = library.get_all_managed_sections(librarian_id)
+    assert all_sections == []
+
+    sample_librarian.assign_section(sample_section)
+    all_sections = library.get_all_managed_sections(librarian_id)
+    assert len(all_sections) == 1
+
+def test_get_invalid_librarian(library):
+    not_found = library.get_librarian("1")
+    assert not_found is None

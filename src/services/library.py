@@ -40,13 +40,20 @@ class Library:
         self.sections.append(section)
     
     def remove_section(self, section):
-        self.sections.remove(section)
+        for section in self.sections:
+            if section in self.sections:
+                self.sections.remove(section)
+            else:
+                return False, "section_not_found"
     
     def get_section(self, section_id):
         for section in self.sections:
             if section.section_id == section_id:
                 return section
         return None
+    
+    def get_all_sections(self):
+        return self.sections
     
     # Librarian methods
     def add_librarian(self, librarian):
@@ -60,6 +67,15 @@ class Library:
             if librarian.employee_id == librarian_id:
                 return librarian
         return None
+    
+    def get_all_librarians(self):
+        all_librarians = self.librarians
+        return all_librarians
+    
+    def get_all_managed_sections(self, librarian_id):
+        librarian = self.get_librarian(librarian_id)
+        all_sections = librarian.get_all_sections()
+        return all_sections
     
     def redistribute_section(self, librarian_id):
         leaving_librarian = self.get_librarian(librarian_id)

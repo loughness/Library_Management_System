@@ -21,3 +21,7 @@ class Librarian:
             self.sections.remove(section_id)
             return True
         return False
+    
+    def get_all_sections(self):
+        """Get all sections managed by this librarian"""
+        return self.sections

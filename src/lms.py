@@ -184,6 +184,55 @@ class AddSectionAPI(Resource):
         new_section = Section(args['name'], args['floor'], args['capacity'])
         my_library.add_section(new_section)
         return jsonify(new_section)
+    
+@lms_api.route('/sections')
+class GetAllSections(Resource):
+    def get(self):
+        """Get all sections in library"""
+        all_sections = my_library.get_all_sections()
+        return jsonify(all_sections)
+    
+@lms_api.route('/section/<section_id>')
+class SectionAPI(Resource):
+    def get(self, section_id):
+        """Get all details of section"""
+        section = my_library.get_section(section_id)
+        section_details = section.get_details()
+        return jsonify(section_details)
+    
+    def delete(self, section_id):
+        """Delete section from library"""
+        #TODO: need to move books first...
+        # get the section
+        section = my_library.get_section(section_id)
+        if section is None:
+            return jsonify("section_not_found")
+
+        # get the librarian in charge of this section
+        librarian_id = section.get_librarian_id()
+        if librarian_id is None:
+            return jsonify("librarian_not_assigned")
+        librarian = my_library.get_librarian(librarian_id)
+        
+        try:
+            my_library.remove_section(section)
+            #TODO: if section unassigned, section has no librarian
+            #TODO: needs better error catching
+            librarian.remove_section(section_id)
+            all_sections = my_library.get_all_sections()
+            return jsonify(all_sections)
+        except:
+            return jsonify("error_occured")
+        
+@lms_api.route('section/<section_id>/books')
+class GetAllBooksInSection(Resource):
+    def get(self, section_id):
+        """Get all books in section"""
+        section = my_library.get_section()
+        books = section.get_all_books()
+
+        return books
+
 
 
 # Add more section endpoints here...
@@ -204,9 +253,20 @@ class AddLibrarian(Resource):
         my_library.add_librarian(new_librarian)
         return jsonify(new_librarian)
 
+@lms_api.route('/librarians')
+class GetLibrarians(Resource):
+    def get(self):
+        """Get all librarians of the library"""
+        librarians = my_library.get_all_librarians()
+        return jsonify(librarians)
 
 @lms_api.route('/librarian/<librarian_id>')
-class RemoveLibrarian(Resource):
+class LibrarianAPI(Resource):
+    def get(self, librarian_id):
+        """Get librarian from library"""
+        librarian = my_library.get_librarian(librarian_id)
+        return jsonify(librarian)
+    
     def delete(self, librarian_id):
         """Remove librarian from library"""
         success, reason = my_library.redistribute_section(librarian_id)
@@ -216,13 +276,28 @@ class RemoveLibrarian(Resource):
                 return {"message": "Librarian not found"}, 404
             elif reason == "no_other_librarians":
                 return {"message": "Librarian cannot leave - no other librarians available..."}, 400
-            
         return {"message": "Librarian removed"}
     
+@lms_api.route('/librarian/<librarian_id>/sections')
+class GetLibrarianSections(Resource):
     def get(self, librarian_id):
-        """Get librarian from library"""
+        """Get all sections managed by a librarian"""
+        all_sections = my_library.get_all_managed_sections(librarian_id)
+        return jsonify(all_sections)
+    
+@lms_api.route('/librarian/<librarian_id>/section/<section_id>')
+class AssignSectionToLibrarian(Resource):
+    def post(self, librarian_id, section_id):
+        """Assign a section to a librarian"""
         librarian = my_library.get_librarian(librarian_id)
-        return jsonify(librarian)
+        librarian.assign_section(section_id)
+
+        section = my_library.get_section(section_id)
+        section.add_librarian(librarian_id)
+
+        all_sections = librarian.get_all_sections()
+
+        return jsonify(all_sections)
 
 
 # ============================================
