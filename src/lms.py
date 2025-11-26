@@ -42,6 +42,10 @@ section_parser.add_argument('name', type=str, required=True, help='Name of the s
 section_parser.add_argument('floor', type=int, required=True, help='Floor number')
 section_parser.add_argument('capacity', type=int, required=True, help='Maximum capacity')
 
+librarian_parser = reqparse.RequestParser()
+librarian_parser.add_argument('name', type=str, required=True, help='Name of librarian')
+librarian_parser.add_argument('email', type=str, required=True, help='Email of librarian')
+
 # ============================================
 # BOOK ENDPOINTS (Examples provided)
 # ============================================
@@ -94,7 +98,10 @@ class AllAvailableBooksAPI(Resource):
     def get(self):
         """Get all available (not borrowed) books"""
         available_books = my_library.available_books() # Gets both a list of books and total number of available books
-        return jsonify(available_books) # Gets just the list of available books
+        if not available_books:
+            return jsonify({"message": "There are no available books..."})
+        else:
+            return jsonify(available_books) # Gets just the list of available books
 
 @lms_api.route('/book/<book_id>/borrow')
 class BorrowBookAPI(Resource):
@@ -138,6 +145,27 @@ class AllMembersAPI(Resource):
     def get(self):
         """Get all members"""
         return jsonify(my_library.members)
+    
+@lms_api.route('/member/<member_id>')
+class MemberAPI(Resource):
+    def delete(self, member_id):
+        """Remove member from Library"""
+        member = my_library.get_member(member_id=member_id)
+
+        if member != None:
+            has_borrowed_books = True if len(member.borrowed_books) >= 1 else False
+
+            if has_borrowed_books:
+                raise BookNotFoundError("Member has outstanding books...")
+            else:
+                my_library.remove_member(member=member)
+                return jsonify(f"Member {member.name}-({member_id}) has been removed")
+        else:
+            raise MemberNotFoundError("Member not found...")
+
+
+
+
 
 
 # Add more member endpoints here...
@@ -166,6 +194,35 @@ class AddSectionAPI(Resource):
 # ============================================
 
 # Add librarian endpoints here...
+@lms_api.route('/librarian')
+class AddLibrarian(Resource):
+    @lms_api.doc(parser=librarian_parser)
+    def post(self):
+        """Add a new librarian"""
+        args = librarian_parser.parse_args()
+        new_librarian = Librarian(args['name'], args['email'])
+        my_library.add_librarian(new_librarian)
+        return jsonify(new_librarian)
+
+
+@lms_api.route('/librarian/<librarian_id>')
+class RemoveLibrarian(Resource):
+    def delete(self, librarian_id):
+        """Remove librarian from library"""
+        success, reason = my_library.redistribute_section(librarian_id)
+
+        if not success:
+            if reason == "librarian_not_found":
+                return {"message": "Librarian not found"}, 404
+            elif reason == "no_other_librarians":
+                return {"message": "Librarian cannot leave - no other librarians available..."}, 400
+            
+        return {"message": "Librarian removed"}
+    
+    def get(self, librarian_id):
+        """Get librarian from library"""
+        librarian = my_library.get_librarian(librarian_id)
+        return jsonify(librarian)
 
 
 # ============================================
@@ -173,6 +230,25 @@ class AddSectionAPI(Resource):
 # ============================================
 
 # Add task generation endpoints here...
+
+
+# ============================================
+# Custom Error (Exception Handling)
+# ============================================
+class BookNotFoundError(Exception):
+    pass
+
+@lms_api.errorhandler(BookNotFoundError)
+def handle_book_not_found(error):
+    return {'message': 'Book not found'}, 404
+
+class MemberNotFoundError(Exception):
+    pass
+
+@lms_api.errorhandler(MemberNotFoundError)
+def handle_member_not_found(error):
+    return {'message': 'Member not found!!!'}, 404
+
 
 
 if __name__ == '__main__':

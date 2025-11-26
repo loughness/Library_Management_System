@@ -18,6 +18,13 @@ def sample_book_data():
         'publication_year': 2020
     }
 
+@pytest.fixture
+def sample_librarian():
+    return {
+        'name': 'Liam',
+        'email': 'liam@loughystudios.com',
+    }
+
 
 def test_add_and_get_book(base_url, sample_book_data):
     # Add a book
@@ -44,4 +51,13 @@ def test_get_all_books(base_url, sample_book_data):
     assert len(books) >= 1
 
 
-# Add more API tests here...
+def test_add_and_get_librarian(base_url, sample_librarian):
+    response = requests.post(f"{base_url}/librarian", data=sample_librarian)
+    assert response.status_code == 200
+    librarian_data = response.json()
+    librarian_id = librarian_data['employee_id']
+
+    response = requests.get(f"{base_url}/librarian/{librarian_id}")
+    assert response.status_code == 200
+    retrieved_librarian = response.json()
+    assert retrieved_librarian['name'] == sample_librarian['name']
