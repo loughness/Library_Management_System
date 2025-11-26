@@ -19,11 +19,7 @@ class Library:
         return None
     
     def available_books(self):
-        available_books = []
-        # TODO: apply list comprehension
-        for book in self.books:
-            if not book.is_borrowed:
-                available_books.append(book)
+        available_books = [book for book in self.books if not book.is_borrowed]
         return available_books
     
     # Member methods
