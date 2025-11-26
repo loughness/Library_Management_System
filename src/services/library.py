@@ -18,6 +18,10 @@ class Library:
                 return book
         return None
     
+    def available_books(self):
+        available_books = [book for book in self.books if not book.is_borrowed]
+        return available_books
+    
     # Member methods
     def add_member(self, member):
         self.members.append(member)
@@ -36,13 +40,20 @@ class Library:
         self.sections.append(section)
     
     def remove_section(self, section):
-        self.sections.remove(section)
+        for section in self.sections:
+            if section in self.sections:
+                self.sections.remove(section)
+            else:
+                return False, "section_not_found"
     
     def get_section(self, section_id):
         for section in self.sections:
             if section.section_id == section_id:
                 return section
         return None
+    
+    def get_all_sections(self):
+        return self.sections
     
     # Librarian methods
     def add_librarian(self, librarian):
@@ -56,3 +67,50 @@ class Library:
             if librarian.employee_id == librarian_id:
                 return librarian
         return None
+    
+    def get_all_librarians(self):
+        all_librarians = self.librarians
+        return all_librarians
+    
+    def get_all_managed_sections(self, librarian_id):
+        librarian = self.get_librarian(librarian_id)
+        all_sections = librarian.get_all_sections()
+        return all_sections
+    
+    def redistribute_section(self, librarian_id):
+        leaving_librarian = self.get_librarian(librarian_id)
+        
+        if leaving_librarian is None:
+            return False, "librarian_not_found"
+        else:
+            total_librarians = len(self.librarians)
+
+            if total_librarians - 1 <= 0:
+                return False, "no_other_librarians"
+            else:
+                # remove leaving librarian
+                self.remove_librarian(leaving_librarian)
+
+                # while the leaving librarian still has sections...
+                while leaving_librarian.sections:
+                    least_num_sections = len(self.librarians[0].sections)
+                    least_num_section_librarian = self.librarians[0]
+
+                    for librarian in self.librarians:
+                        # getting the librarians number of sections
+                        num_lib_sections = len(librarian.sections)
+                        # if the librarians number of sections is less than the least number of sections
+                        # assign this as the least number of sections
+                        # save which librarian this is
+                        if num_lib_sections < least_num_sections:
+                            least_num_sections = num_lib_sections
+                            least_num_section_librarian = librarian
+                    
+                    # append the leaving librarian first section to another librarian
+                    section = leaving_librarian.sections[0]
+                    # remove this section from old librarian
+                    leaving_librarian.remove_section(section)
+                    # add section to 'new' librarian
+                    least_num_section_librarian.assign_section(section)
+
+                return True, "ok"
